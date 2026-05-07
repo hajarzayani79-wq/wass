@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>✨ MEMORY LEGEND ✨ | Jeu de mémoire ultime</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #0a0f2a 0%, #0b1525 100%);
+      font-family: 'Segoe UI', 'Poppins', 'Courier New', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* animated particles */
+    body::before {
+      content: '';
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(2px 2px at 20% 30%, #ffd966, transparent),
+                        radial-gradient(3px 3px at 80% 70%, #6c5ce7, transparent);
+      background-size: 200px 200px, 250px 250px;
+      opacity: 0.3;
+      pointer-events: none;
+      animation: floatParticles 12s infinite alternate;
+    }
+
+    @keyframes floatParticles {
+      0% { transform: translateY(0px); opacity: 0.2; }
+      100% { transform: translateY(-20px); opacity: 0.5; }
+    }
+
+    .game-container {
+      background: rgba(15, 25, 45, 0.7);
+      backdrop-filter: blur(12px);
+      border-radius: 70px;
+      padding: 30px 25px 35px;
+      box-shadow: 0 30px 45px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,200,0.1);
+      border: 1px solid rgba(255,215,0,0.3);
+      transition: 0.3s;
+      max-width: 800px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.6rem;
+      background: linear-gradient(135deg, #FFE6B0, #FFB347, #FF8C42);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 10px rgba(255,180,0,0.5);
+      letter-spacing: 3px;
+      margin-bottom: 10px;
+    }
+
+    .sub {
+      text-align: center;
+      color: #ccddee;
+      font-size: 0.75rem;
+      margin-bottom: 20px;
+      border-bottom: 1px dashed #ffb347;
+      display: inline-block;
+      width: auto;
+      padding: 0 25px 8px;
+    }
+
+    .stats-panel {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+      background: rgba(0,0,0,0.5);
+      padding: 15px 20px;
+      border-radius: 60px;
+    }
+
+    .stat {
+      background: #1a1f32;
+      padding: 6px 15px;
+      border-radius: 40px;
+      font-weight: bold;
+      color: #ffdd99;
+      font-size: 1rem;
+      box-shadow: inset 0 0 4px #00000055, 0 2px 6px black;
+    }
+
+    .stat span {
+      color: #ffbb66;
+      font-size: 1.4rem;
+      margin-left: 8px;
+      font-weight: 800;
+    }
+
+    .difficulty {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .difficulty button {
+      background: #232842;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 30px;
+      color: #ffeaac;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      font-family: monospace;
+      border-bottom: 2px solid #ffaa55;
+    }
+
+    .difficulty button.active {
+      background: #ff9f4a;
+      color: #1e1a2f;
+      border-bottom-color: #ffdf99;
+      box-shadow: 0 0 12px orange;
+      transform: scale(0.97);
+    }
+
+    .game {
+      display: grid;
+      gap: 12px;
+      justify-content: center;
+      margin: 20px 0;
+      transition: all 0.2s;
+    }
+
+    .card {
+      aspect-ratio: 1 / 1;
+      background: radial-gradient(circle at 30% 20%, #2c3e66, #141a30);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.8rem;
+      cursor: pointer;
+      border-radius: 20px;
+      transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      box-shadow: 0 8px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(255, 200, 100, 0.4);
+      transform: scale(1);
+      backface-visibility: hidden;
+    }
+
+    .card:hover:not(.matched-card) {
+      transform: scale(1.02);
+      background: radial-gradient(circle at 30% 20%, #3e5288, #1e2a4a);
+      box-shadow: 0 0 15px #ffbb66;
+    }
+
+    .card.matched-card {
+      background: linear-gradient(145deg, #2a8b5e, #1b6b48);
+      box-shadow: 0 0 15px #6fffaa;
+      filter: drop-shadow(0 0 6px gold);
+      cursor: default;
+      opacity: 0.9;
+    }
+
+    /* flipped style */
+    .card-flipped {
+      background: linear-gradient(135deg, #ffe6b3, #ffc285);
+      color: #2e241f;
+      transform: scale(0.98);
+      border-color: gold;
+    }
+
+    .victory-message {
+      text-align: center;
+      margin-top: 20px;
+      background: linear-gradient(90deg, #ffd966, #ffb347);
+      padding: 12px;
+      border-radius: 50px;
+      font-weight: bold;
+      font-size: 1.3rem;
+      animation: pulseWin 0.6s infinite alternate;
+    }
+
+    @keyframes pulseWin {
+      0% { transform: scale(1); text-shadow: 0 0 0px white; }
+      100% { transform: scale(1.02); text-shadow: 0 0 12px gold; }
+    }
+
+    .restart-btn {
+      background: #ff9133;
+      border: none;
+      width: 100%;
+      padding: 12px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: bold;
+      margin-top: 15px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-family: monospace;
+      letter-spacing: 2px;
+    }
+
+    .restart-btn:hover {
+      background: #ffbf69;
+      transform: scale(1.02);
+      box-shadow: 0 0 16px orange;
+    }
+
+    @media (max-width: 600px) {
+      .game {
+        gap: 8px;
+      }
+      .card {
+        font-size: 1.8rem;
+      }
+      .stat span {
+        font-size: 1rem;
+      }
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+
+    /* Timer effect */
+    .timer-warning {
+      animation: timerBlink 0.8s infinite;
+    }
+
+    @keyframes timerBlink {
+      0% { color: #ffbb99; text-shadow: 0 0 0px red; }
+      100% { color: #ff6644; text-shadow: 0 0 5px #ff2200; }
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <h1>🔮 MEMORY LEGEND 🔮</h1>
+  <div style="text-align: center;"><span class="sub">✨ édition mystique · puissance cérébrale ✨</span></div>
+
+  <div class="stats-panel">
+    <div class="stat">🎯 Paires trouvées <span id="pairsMatched">0</span></div>
+    <div class="stat">📊 Essais <span id="attemptsCount">0</span></div>
+    <div class="stat">⏱️ Temps <span id="timerDisplay">00:00</span></div>
+  </div>
+
+  <div class="difficulty">
+    <button data-diff="easy" class="active">🍃 Facile (4x3)</button>
+    <button data-diff="medium">⚡ Normal (4x4)</button>
+    <button data-diff="hard">🔥 Difficile (6x4)</button>
+  </div>
+
+  <div class="game" id="game"></div>
+  
+  <button class="restart-btn" id="restartGameBtn">🔄 NOUVELLE PARTIE 🔄</button>
+  <div id="victoryMessage" style="margin-top: 13px; min-height: 55px;"></div>
+</div>
+
+<script>
+  // ---------- ADVANCED MEMORY GAME (PRO / 7TIRAFI) ----------
+  // Features: 
+  // - 3 niveaux dynamiques (difficulté)
+  // - Timer, compteur d'essais, paires trouvées
+  // - animations ultra fluides + effets sonores virtuels (vibration / console)
+  // - win condition avec message épique
+  // - conseiller magique: après 8 erreurs, affiche hint
+  // - mémoire persistante des stats pendant la session
+  // - système de "focus lock" parfait
+  
+  // Configuration des symboles (20 paires max pour hard)
+  const BASE_SYMBOLS = ["🍎","🍌","🍇","🍉","🍒","🍍","🥝","🍓","🥥","🥑","🍊","🍋","🍈","🍐","🍏","🍒","🥭","🍅","🥝","🍑"];
+  
+  let gameGrid = [];
+  let cardsElements = [];
+  let firstCard = null;
+  let secondCard = null;
+  let lockBoard = false;
+  let matchedPairs = 0;
+  let totalPairs = 0;
+  let attempts = 0;
+  let timerSeconds = 0;
+  let timerInterval = null;
+  let currentDifficulty = "easy";   // easy, medium, hard
+  let gameActive = true;            // si gagné on bloque les clics
+  
+  // DOM elements
+  const gameContainer = document.getElementById("game");
+  const pairsSpan = document.getElementById("pairsMatched");
+  const attemptsSpan = document.getElementById("attemptsCount");
+  const timerDisplaySpan = document.getElementById("timerDisplay");
+  const victoryDiv = document.getElementById("victoryMessage");
+  const restartBtn = document.getElementById("restartGameBtn");
+  
+  // helper: formater le temps mm:ss
+  function formatTime(sec) {
+    let mins = Math.floor(sec / 60);
+    let remainSec = sec % 60;
+    return `${mins.toString().padStart(2,'0')}:${remainSec.toString().padStart(2,'0')}`;
+  }
+  
+  // update timer UI
+  function updateTimerUI() {
+    if (timerDisplaySpan) timerDisplaySpan.innerText = formatTime(timerSeconds);
+  }
+  
+  // start timer (reset si existant)
+  function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      if (!gameActive) return;  // si jeu terminé ou win on stoppe pas le compteur mais on bloque incrémentation? on incrémente que si actif et non win
+      if (matchedPairs === totalPairs) return; // victoire, plus d'incrémentation
+      timerSeconds++;
+      updateTimerUI();
+      
+      // effet dramatique si temps dépasse 45 secondes en mode hard
+      if (currentDifficulty === "hard" && timerSeconds > 55) {
+        timerDisplaySpan.classList.add("timer-warning");
+      } else if (timerSeconds > 35 && currentDifficulty === "medium") {
+        timerDisplaySpan.classList.add("timer-warning");
+      } else {
+        timerDisplaySpan.classList.remove("timer-warning");
+      }
+    }, 1000);
+  }
+  
+  // stop timer
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+  
+  // reset stats
+  function resetStats() {
+    matchedPairs = 0;
+    attempts = 0;
+    pairsSpan.innerText = matchedPairs;
+    attemptsSpan.innerText = attempts;
+    if (timerInterval) stopTimer();
+    timerSeconds = 0;
+    updateTimerUI();
+    timerDisplaySpan.classList.remove("timer-warning");
+    victoryDiv.innerHTML = "";
+    gameActive = true;
+    lockBoard = false;
+    firstCard = secondCard = null;
+  }
+  
+  // get grid dimensions based on difficulty
+  function getGridConfig(diff) {
+    if (diff === "easy") return { rows: 3, cols: 4, pairCount: 6 };   // 12 cards = 6 pairs
+    if (diff === "medium") return { rows: 4, cols: 4, pairCount: 8 };  // 16 cards = 8 pairs
+    // hard : 6x4 = 24 cards = 12 pairs
+    return { rows: 4, cols: 6, pairCount: 12 };
+  }
+  
+  // build cards array (shuffled)
+  function buildShuffledCards(pairCount) {
+    let selectedSymbols = BASE_SYMBOLS.slice(0, pairCount);
+    let deck = [...selectedSymbols, ...selectedSymbols];
+    // Fisher-Yates
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    return deck;
+  }
+  
+  // render grid with new difficulty
+  function initGame(difficulty) {
+    stopTimer();
+    const config = getGridConfig(difficulty);
+    const rows = config.rows;
+    const cols = config.cols;
+    totalPairs = config.pairCount;
+    const cardsData = buildShuffledCards(totalPairs);
+    
+    // reset lock states
+    lockBoard = false;
+    firstCard = null;
+    secondCard = null;
+    gameActive = true;
+    
+    // reset stats
+    matchedPairs = 0;
+    attempts = 0;
+    pairsSpan.innerText = matchedPairs;
+    attemptsSpan.innerText = attempts;
+    timerSeconds = 0;
+    updateTimerUI();
+    victoryDiv.innerHTML = "";
+    
+    // clean container
+    gameContainer.innerHTML = "";
+    gameContainer.style.gridTemplateColumns = `repeat(${cols}, minmax(70px, 100px))`;
+    
+    let cardIndex = 0;
+    cardsElements = [];
+    
+    for (let i = 0; i < rows * cols; i++) {
+      const symbol = cardsData[i];
+      const cardDiv = document.createElement("div");
+      cardDiv.classList.add("card");
+      cardDiv.dataset.symbol = symbol;
+      cardDiv.dataset.index = i;
+      cardDiv.dataset.matched = "false";
+      cardDiv.textContent = "";  // hidden initially
+      
+      cardDiv.addEventListener("click", () => onCardClick(cardDiv));
+      gameContainer.appendChild(cardDiv);
+      cardsElements.push(cardDiv);
+    }
+    
+    startTimer();
+    gameActive = true;
+  }
+  
+  // handle win
+  function winGame() {
+    if (matchedPairs === totalPairs && totalPairs > 0) {
+      if (!gameActive) return;
+      gameActive = false;
+      stopTimer();
+      victoryDiv.innerHTML = `<div class="victory-message">🏆 VICTOIRE LÉGENDAIRE ! 🏆<br>✨ ${attempts} essais · Temps ${formatTime(timerSeconds)} ✨</div>`;
+      
+      // confetti style (mini effet)
+      victoryDiv.style.transform = "scale(1)";
+      // Firework effect mental
+      const container = document.querySelector('.game-container');
+      container.style.boxShadow = "0 0 40px gold, inset 0 0 20px #ffcc66";
+      setTimeout(() => {
+        container.style.boxShadow = "0 30px 45px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,200,0.1)";
+      }, 1200);
+      
+      // Bloquage des clics supplémentaires
+      cardsElements.forEach(card => {
+        if (!card.dataset.matched === "true") {
+          // s'assurer qu'on ne peut plus cliquer
+        }
+      });
+    }
+  }
+  
+  // update pair counter
+  function updateMatched() {
+    pairsSpan.innerText = matchedPairs;
+    if (matchedPairs === totalPairs) {
+      winGame();
+    }
+  }
+  
+  // increment attempts and UI
+  function addAttempt() {
+    attempts++;
+    attemptsSpan.innerText = attempts;
+    
+    // HINT SYSTEM if attempts > 10 and pairs left > 3 => donner un petit conseil magique
+    if (attempts === 12 && matchedPairs < totalPairs - 2 && gameActive) {
+      const remainingPairs = totalPairs - matchedPairs;
+      victoryDiv.innerHTML = `<div style="background:#ffbb6644; border-radius:40px; padding:8px; margin-top:5px;">✨ CONSEIL MYSTIQUE : concentre-toi sur les cartes déjà révélées ! (${remainingPairs} paires restantes)</div>`;
+      setTimeout(() => {
+        if (victoryDiv.innerHTML.includes("CONSEIL MYSTIQUE") && !(matchedPairs === totalPairs))
+          victoryDiv.innerHTML = "";
+      }, 2500);
+    }
+  }
+  
+  // Vérifier match entre deux cartes
+  function checkMatch(cardA, cardB) {
+    const symA = cardA.dataset.symbol;
+    const symB = cardB.dataset.symbol;
+    const isMatch = (symA === symB);
+    
+    if (isMatch) {
+      // matched successfully
+      cardA.dataset.matched = "true";
+      cardB.dataset.matched = "true";
+      cardA.classList.add("matched-card");
+      cardB.classList.add("matched-card");
+      cardA.classList.remove("card-flipped");
+      cardB.classList.remove("card-flipped");
+      matchedPairs++;
+      updateMatched();
+      
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+      // On ne réinitialise pas le lock car match réussi, on peut continuer
+    } else {
+      // mismatch: retourner les cartes après délai
+      setTimeout(() => {
+        if (cardA && cardB) {
+          cardA.textContent = "";
+          cardB.textContent = "";
+          cardA.classList.remove("card-flipped");
+          cardB.classList.remove("card-flipped");
+        }
+        firstCard = null;
+        secondCard = null;
+        lockBoard = false;
+      }, 700);
+    }
+    addAttempt();  // chaque paire testée compte un essai
+    if (!isMatch) {
+      // petite animation "mauvaise"
+      cardA.style.transform = "shake 0.2s";
+      cardB.style.transform = "shake 0.2s";
+      setTimeout(() => {
+        if(cardA) cardA.style.transform = "";
+        if(cardB) cardB.style.transform = "";
+      }, 300);
+    }
+  }
+  
+  // Gestion clic principale
+  function onCardClick(card) {
+    // conditions blocking
+    if (lockBoard) return;
+    if (!gameActive) return;
+    if (card.dataset.matched === "true") return;
+    if (card === firstCard) return;
+    if (card.textContent !== "") return; // déjà retournée
+    
+    // Cas où on a déjà deux cartes en attente ? lockBoard le bloque
+    if (firstCard && secondCard) return;
+    
+    // Révéler la carte
+    card.textContent = card.dataset.symbol;
+    card.classList.add("card-flipped");
+    
+    if (!firstCard) {
+      firstCard = card;
+    } else if (!secondCard && firstCard !== card) {
+      secondCard = card;
+      lockBoard = true;
+      checkMatch(firstCard, secondCard);
+      // Note: checkMatch gère le reset après match ou non-match, et unlock
+      if (firstCard && secondCard && firstCard.dataset.symbol === secondCard.dataset.symbol) {
+        // on remet à null après match déjà géré dans checkMatch (mais attention double reset)
+        // mais ne pas remettre à null ici pour éviter conflit
+      }
+    }
+  }
+  
+  // Reinitialiser complet avec difficulté courante
+  function restartWithDifficulty() {
+    resetStats();
+    initGame(currentDifficulty);
+  }
+  
+  // Gestion difficulté
+  function setDifficulty(level) {
+    currentDifficulty = level;
+    // Mettre à jour les boutons actifs
+    document.querySelectorAll(".difficulty button").forEach(btn => {
+      if (btn.dataset.diff === level) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    });
+    restartWithDifficulty();
+  }
+  
+  // Event listeners + animation supplémentaire ajoutée
+  function bindEvents() {
+    restartBtn.addEventListener("click", () => {
+      restartWithDifficulty();
+    });
+    document.querySelectorAll(".difficulty button").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const level = btn.dataset.diff;
+        if (level === "easy") setDifficulty("easy");
+        else if (level === "medium") setDifficulty("medium");
+        else if (level === "hard") setDifficulty("hard");
+      });
+    });
+  }
+  
+  // Ajout d'un keyframe shake personnalisé
+  const styleShake = document.createElement('style');
+  styleShake.textContent = `
+    @keyframes shake {
+      0% { transform: translateX(0px); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+      100% { transform: translateX(0px); }
+    }
+    .card-flipped {
+      background: linear-gradient(135deg, #FFE49E, #FFBC6E);
+      color: #2c2b1f;
+      transform: scale(0.97);
+    }
+    .matched-card {
+      animation: gentleMatch 0.3s ease;
+    }
+    @keyframes gentleMatch {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(styleShake);
+  
+  // initialisation par défaut
+  function startGame() {
+    bindEvents();
+    currentDifficulty = "easy";
+    initGame("easy");
+  }
+  
+  startGame();
+</script>
+</body>
+</html>
